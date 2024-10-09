@@ -1,12 +1,20 @@
 document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('mandelbrotCanvas');
     const ctx = canvas.getContext('2d');
+    const saveButton = document.getElementById('saveButton');
+    const saveHighResButton = document.getElementById('saveHighResButton');
+    const resolutionSelect = document.getElementById('resolutionSelect');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    
+    let worker = new Worker('src/highresrender.worker.js');
 
     let zoom = 0.5;  // Default zoom to 0.5
     let offsetX = 0;
     let offsetY = 0;
     let maxIterations = 100;
     let colorScheme = 'fire';  // Default color scheme to Fire
+    let customColors = { start: '#000000', middle: '#ff0000', end: '#ffffff' };  // Custom colors
 
     const zoomSlider = document.getElementById('zoomSlider');
     const iterationSlider = document.getElementById('iterationSlider');
@@ -16,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const colorSchemeDropdown = document.getElementById('colorScheme');
     const customColorsDiv = document.getElementById('customColors');
     const randomControlsDiv = document.getElementById('randomControls');
-    const saveButton = document.getElementById('saveButton');
 
     // Custom Color Inputs
     const startColorInput = document.getElementById('startColor');
@@ -46,7 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
         offsetX,
         offsetY,
         maxIterations,
-        colorScheme
+        colorScheme,
+        customColors
     };
 
     // Update settings on change
@@ -56,7 +64,8 @@ document.addEventListener('DOMContentLoaded', function() {
             offsetX,
             offsetY,
             maxIterations,
-            colorScheme
+            colorScheme,
+            customColors
         };
     }
 
@@ -115,9 +124,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate a custom gradient color based on t (0 to 1)
     function getCustomGradientColor(t) {
-        const startColor = hexToRgb(startColorInput.value);
-        const middleColor = hexToRgb(middleColorInput.value);
-        const endColor = hexToRgb(endColorInput.value);
+        const startColor = hexToRgb(customColors.start);
+        const middleColor = hexToRgb(customColors.middle);
+        const endColor = hexToRgb(customColors.end);
 
         let color;
         if (t < 0.5) {
@@ -159,22 +168,34 @@ document.addEventListener('DOMContentLoaded', function() {
         startColorInput.value = generateRandomColor();
         middleColorInput.value = generateRandomColor();
         endColorInput.value = generateRandomColor();
+        customColors = {
+            start: startColorInput.value,
+            middle: middleColorInput.value,
+            end: endColorInput.value
+        };
+        updateSettings();
         drawMandelbrot();
     }
 
     // Randomize individual colors
     function randomizeStartColor() {
         startColorInput.value = generateRandomColor();
+        customColors.start = startColorInput.value;
+        updateSettings();
         drawMandelbrot();
     }
 
     function randomizeMiddleColor() {
         middleColorInput.value = generateRandomColor();
+        customColors.middle = middleColorInput.value;
+        updateSettings();
         drawMandelbrot();
     }
 
     function randomizeEndColor() {
         endColorInput.value = generateRandomColor();
+        customColors.end = endColorInput.value;
+        updateSettings();
         drawMandelbrot();
     }
 
@@ -233,6 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
         iterationValue.textContent = maxIterations;
         colorScheme = 'fire';
         colorSchemeDropdown.value = 'fire';
+        customColors = { start: '#000000', middle: '#ff0000', end: '#ffffff' }; // Reset custom colors
         updateSettings();
         drawMandelbrot(); // Redraw Mandelbrot after reset
     });
@@ -293,9 +315,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Listen for custom color input changes to update the color scheme automatically
-    startColorInput.addEventListener('input', drawMandelbrot);
-    middleColorInput.addEventListener('input', drawMandelbrot);
-    endColorInput.addEventListener('input', drawMandelbrot);
+    startColorInput.addEventListener('input', () => {
+        customColors.start = startColorInput.value;
+        updateSettings();
+        drawMandelbrot();
+    });
+
+    middleColorInput.addEventListener('input', () => {
+        customColors.middle = middleColorInput.value;
+        updateSettings();
+        drawMandelbrot();
+    });
+
+    endColorInput.addEventListener('input', () => {
+        customColors.end = endColorInput.value;
+        updateSettings();
+        drawMandelbrot();
+    });
 
     // Randomization Listeners
     randomizeAllButton.addEventListener('click', randomizeAllColors);
@@ -309,6 +345,67 @@ document.addEventListener('DOMContentLoaded', function() {
         link.download = 'mandelbrot_view.png';  // Set the default filename
         link.href = canvas.toDataURL('image/png');  // Get the canvas data as a PNG file
         link.click();  // Trigger download
+    });
+
+    // Function to start the high-resolution render
+    function startHighResRender() {
+        const resOption = resolutionSelect.value;
+        let width, height;
+
+        switch (resOption) {
+            case '720':
+                width = 960;
+                height = 720;
+                break;
+            case '1080':
+                width = 1440;
+                height = 1080;
+                break;
+            case '2k':
+                width = 2048;
+                height = 1536;
+                break;
+            case '4k':
+                width = 4096;
+                height = 3072;
+                break;
+            case 'custom':
+                width = parseInt(document.getElementById('customWidth').value);
+                height = parseInt(document.getElementById('customHeight').value);
+                break;
+        }
+
+        const settings = window.mandelbrotSettings;
+        settings.width = width;
+        settings.height = height;
+
+        // Show progress bar
+        progressContainer.style.display = "block";
+        progressBar.style.width = "0%";
+
+        worker.postMessage(settings);  // Send settings to the Web Worker for processing
+    }
+
+    // Web Worker message handler
+    worker.onmessage = function(e) {
+        if (e.data.type === 'progress') {
+            progressBar.style.width = `${e.data.progress}%`;
+        } else if (e.data.type === 'complete') {
+            // Create a link to download the image as a PNG
+            const blob = e.data.blob;
+            const link = document.createElement('a');
+            link.download = `mandelbrot_highres.png`;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+
+            // Hide progress bar
+            progressContainer.style.display = "none";
+        }
+    };
+
+    // Save High-Res PNG button event listener
+    saveHighResButton.addEventListener('click', function() {
+        startHighResRender();  // Start the high-res render when the button is clicked
     });
 
     // Initial draw
