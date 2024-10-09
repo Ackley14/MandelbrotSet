@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandelbrot Set Generator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background-color: #282c34;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            max-width: 1200px;
+            align-items: center;
+        }
+
+        canvas {
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 300px;
+            padding: 20px;
+            background-color: #333;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .controls-section {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 14px;
+        }
+
+        input[type="range"], input[type="button"], button, select, input[type="color"] {
+            background-color: #444;
+            color: #fff;
+            border: none;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        input[type="button"]:hover, button:hover, select:hover, input[type="color"]:hover {
+            background-color: #666;
+        }
+
+        .zoom-step-controls, .random-controls {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .random-controls button, .zoom-step-controls button {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Controls -->
+        <div class="controls-container">
+            <!-- Zoom and Iteration Section -->
+            <div class="controls-section">
+                <div class="section-title">Zoom & Iteration</div>
+                <div>
+                    <label for="zoomSlider">Zoom: <span id="zoomValue">1.0</span>x</label><br>
+                    <input type="range" id="zoomSlider" min="0.5" max="10000" step="0.1" value="1.0">
+                </div>
+                <div>
+                    <label for="iterationSlider">Iterations: <span id="iterationValue">100</span></label><br>
+                    <input type="range" id="iterationSlider" min="50" max="1000" step="10" value="100">
+                </div>
+            </div>
+
+            <!-- Zoom Step Controls -->
+            <div class="zoom-step-controls">
+                <button id="zoomIn1x">Zoom In +1x</button>
+                <button id="zoomIn10x">Zoom In +10x</button>
+                <button id="zoomIn100x">Zoom In +100x</button>
+                <button id="zoomIn1000x">Zoom In +1000x</button>
+                <button id="zoomOut1x">Zoom Out -1x</button>
+                <button id="zoomOut10x">Zoom Out -10x</button>
+                <button id="zoomOut100x">Zoom Out -100x</button>
+                <button id="zoomOut1000x">Zoom Out -1000x</button>
+            </div>
+        </div>
+
+        <!-- Mandelbrot Canvas -->
+        <canvas id="mandelbrotCanvas" width="800" height="600"></canvas>
+
+        <!-- Right Controls -->
+        <div class="controls-container">
+            <!-- Color Selection Section -->
+            <div class="controls-section">
+                <div class="section-title">Color Scheme</div>
+                <div>
+                    <label for="colorScheme">Scheme:</label><br>
+                    <select id="colorScheme">
+                        <option value="vibrant">Vibrant</option>
+                        <option value="grayscale">Grayscale</option>
+                        <option value="blackWhite">Black & White</option>
+                        <option value="fire">Fire</option>
+                        <option value="cool">Cool</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Reset & Random -->
+            <div class="controls-section">
+                <div class="section-title">Reset & Random</div>
+                <input type="button" id="resetButton" value="Reset View">
+                <div class="random-controls hidden" id="randomControls">
+                    <button id="randomizeAll">Randomize All Colors</button>
+                    <button id="randomizeStart">Randomize Start Color</button>
+                    <button id="randomizeMiddle">Randomize Middle Color</button>
+                    <button id="randomizeEnd">Randomize End Color</button>
+                </div>
+            </div>
+
+            <!-- Custom Gradient Color Selectors -->
+            <div class="controls-section hidden" id="customColors">
+                <div class="section-title">Custom Gradient</div>
+                <div>
+                    <label>Start: <input type="color" id="startColor" value="#000000"></label>
+                </div>
+                <div>
+                    <label>Middle: <input type="color" id="middleColor" value="#ff0000"></label>
+                </div>
+                <div>
+                    <label>End: <input type="color" id="endColor" value="#ffffff"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/mandelbrot.js"></script>
+</body>
+</html>
