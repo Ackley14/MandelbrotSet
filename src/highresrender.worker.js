@@ -5,6 +5,7 @@ self.onmessage = function(e) {
     const canvas = new OffscreenCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
+    
     let totalPixels = width * height;
     let renderedPixels = 0;
     let chunkSize = 1350;
