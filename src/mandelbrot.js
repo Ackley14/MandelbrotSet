@@ -1,11 +1,11 @@
 const canvas = document.getElementById('mandelbrotCanvas');
 const ctx = canvas.getContext('2d');
 
-let zoom = 1.0;
+let zoom = 0.5;  // Default zoom to 0.5
 let offsetX = 0;
 let offsetY = 0;
 let maxIterations = 100;
-let colorScheme = 'vibrant'; // Default color scheme
+let colorScheme = 'fire';  // Default color scheme to Fire
 
 const zoomSlider = document.getElementById('zoomSlider');
 const iterationSlider = document.getElementById('iterationSlider');
@@ -68,7 +68,7 @@ function getColor(n, maxIterations) {
     switch (colorScheme) {
         case 'grayscale':
             const gray = Math.floor(255 * t);
-            return `rgb(${gray}, ${gray}, ${gray})`;
+            return 'rgb(' + gray + ',' + gray + ',' + gray + ')';
 
         case 'blackWhite':
             return t === 1 ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)';
@@ -76,12 +76,12 @@ function getColor(n, maxIterations) {
         case 'fire':
             const fireRed = Math.floor(255 * t);
             const fireGreen = Math.floor(100 * t);
-            return `rgb(${fireRed}, ${fireGreen}, 0)`; // Red to yellow transition
+            return 'rgb(' + fireRed + ',' + fireGreen + ', 0)'; // Red to yellow transition
 
         case 'cool':
             const blue = Math.floor(255 * (1 - t));
             const green = Math.floor(255 * t);
-            return `rgb(0, ${green}, ${blue})`; // Blue to green transition
+            return 'rgb(0,' + green + ',' + blue + ')'; // Blue to green transition
 
         case 'custom': // Custom gradient
             return getCustomGradientColor(t);
@@ -91,7 +91,7 @@ function getColor(n, maxIterations) {
             const hue = Math.floor(360 * t); // Map iterations to hue (0-360)
             const saturation = 100;
             const lightness = t < 1 ? 50 : 0; // Brighter for fewer iterations
-            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            return 'hsl(' + hue + ',' + saturation + '%, ' + lightness + '%)';
     }
 }
 
@@ -108,7 +108,7 @@ function getCustomGradientColor(t) {
         color = interpolateColor(middleColor, endColor, (t - 0.5) * 2); // Interpolate between middle and end
     }
 
-    return `rgb(${color.r}, ${color.g}, ${color.b})`;
+    return 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
 }
 
 // Interpolate between two colors (start and end) based on t (0 to 1)
@@ -133,7 +133,7 @@ function hexToRgb(hex) {
 // Function to generate a random hex color
 function generateRandomColor() {
     const randomColor = Math.floor(Math.random() * 16777215).toString(16);
-    return `#${randomColor.padStart(6, '0')}`;
+    return '#' + randomColor.padStart(6, '0');
 }
 
 // Randomize all colors
@@ -203,11 +203,13 @@ iterationSlider.addEventListener('input', () => {
 
 // Reset view to default
 resetButton.addEventListener('click', () => {
-    zoom = 1.0;
+    zoom = 0.5;
     offsetX = 0;
     offsetY = 0;
     zoomSlider.value = zoom;
     zoomValue.textContent = zoom;
+    colorScheme = 'fire';
+    colorSchemeDropdown.value = 'fire';
     drawMandelbrot();
 });
 
