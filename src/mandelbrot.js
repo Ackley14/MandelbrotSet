@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const colorSchemeDropdown = document.getElementById('colorScheme');
     const customColorsDiv = document.getElementById('customColors');
     const randomControlsDiv = document.getElementById('randomControls');
+    const saveButton = document.getElementById('saveButton');
 
     // Custom Color Inputs
     const startColorInput = document.getElementById('startColor');
@@ -38,6 +39,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const zoomOut10x = document.getElementById('zoomOut10x');
     const zoomOut100x = document.getElementById('zoomOut100x');
     const zoomOut1000x = document.getElementById('zoomOut1000x');
+
+    // Store the current settings in the global object to be passed to highresrender.js
+    window.mandelbrotSettings = {
+        zoom,
+        offsetX,
+        offsetY,
+        maxIterations,
+        colorScheme
+    };
+
+    // Update settings on change
+    function updateSettings() {
+        window.mandelbrotSettings = {
+            zoom,
+            offsetX,
+            offsetY,
+            maxIterations,
+            colorScheme
+        };
+    }
 
     // Helper function to map canvas coordinates to complex plane
     function mapToComplexPlane(x, y, width, height, zoom, offsetX, offsetY) {
@@ -71,11 +92,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const gray = Math.floor(255 * t);
                 return 'rgb(' + gray + ',' + gray + ',' + gray + ')';
 
-            case 'festive':  // Red to green gradient
-                const festiveRed = Math.floor(120 * (1 - t));
-                const festiveGreen = Math.floor(250 * t);
-                return 'rgb(' + festiveRed + ',' + festiveGreen + ', 50)';
-
             case 'fire':
                 const fireRed = Math.floor(255 * t);
                 const fireGreen = Math.floor(100 * t);
@@ -85,12 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const blue = Math.floor(255 * (1 - t));
                 const green = Math.floor(255 * t);
                 return 'rgb(0,' + green + ',' + blue + ')'; // Blue to green transition
-
-            case 'vibrant': // Purple to blue gradient
-                const purple = { r: 128, g: 0, b: 128 };  // Purple
-                const vibrantBlue = { r: 0, g: 0, b: 255 };  // Blue
-                const vibrantColor = interpolateColor(purple, vibrantBlue, t);
-                return 'rgb(' + vibrantColor.r + ',' + vibrantColor.g + ',' + vibrantColor.b + ')';
 
             case 'custom': // Custom gradient
                 return getCustomGradientColor(t);
@@ -199,14 +209,16 @@ document.addEventListener('DOMContentLoaded', function() {
     zoomSlider.addEventListener('input', () => {
         zoom = parseFloat(zoomSlider.value);
         zoomValue.textContent = zoom.toFixed(1);
-        drawMandelbrot();
+        updateSettings();
+        drawMandelbrot(); // Redraw Mandelbrot on zoom change
     });
 
     // Update iteration count and redraw
     iterationSlider.addEventListener('input', () => {
         maxIterations = parseInt(iterationSlider.value, 10);
         iterationValue.textContent = maxIterations;
-        drawMandelbrot();
+        updateSettings();
+        drawMandelbrot(); // Redraw Mandelbrot on iteration change
     });
 
     // Reset view to default
@@ -216,9 +228,13 @@ document.addEventListener('DOMContentLoaded', function() {
         offsetY = 0;
         zoomSlider.value = zoom;
         zoomValue.textContent = zoom;
+        maxIterations = 100;
+        iterationSlider.value = maxIterations;
+        iterationValue.textContent = maxIterations;
         colorScheme = 'fire';
         colorSchemeDropdown.value = 'fire';
-        drawMandelbrot();
+        updateSettings();
+        drawMandelbrot(); // Redraw Mandelbrot after reset
     });
 
     // Handle canvas click to pan to new location
@@ -234,7 +250,8 @@ document.addEventListener('DOMContentLoaded', function() {
         offsetX = clickedPoint.real;
         offsetY = clickedPoint.imag;
 
-        drawMandelbrot();
+        updateSettings();
+        drawMandelbrot(); // Redraw Mandelbrot after panning
     });
 
     // Zoom Step Controls
@@ -242,6 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
         zoom = Math.max(0.5, zoom + newZoom); // Ensure zoom never goes below 0.5x
         zoomSlider.value = zoom;
         zoomValue.textContent = zoom.toFixed(1);
+        updateSettings();
         drawMandelbrot();
     }
 
@@ -260,7 +278,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Color Scheme Change
     colorSchemeDropdown.addEventListener('change', (event) => {
         colorScheme = event.target.value;
-        
+        updateSettings();
+
         // Show or hide custom color inputs and random buttons based on selection
         if (colorScheme === 'custom') {
             customColorsDiv.classList.remove('hidden');
@@ -270,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
             randomControlsDiv.classList.add('hidden');
         }
 
-        drawMandelbrot();
+        drawMandelbrot(); // Redraw Mandelbrot on color scheme change
     });
 
     // Listen for custom color input changes to update the color scheme automatically
@@ -283,6 +302,14 @@ document.addEventListener('DOMContentLoaded', function() {
     randomizeStartButton.addEventListener('click', randomizeStartColor);
     randomizeMiddleButton.addEventListener('click', randomizeMiddleColor);
     randomizeEndButton.addEventListener('click', randomizeEndColor);
+
+    // Save the current canvas view as a PNG file
+    saveButton.addEventListener('click', function() {
+        const link = document.createElement('a');
+        link.download = 'mandelbrot_view.png';  // Set the default filename
+        link.href = canvas.toDataURL('image/png');  // Get the canvas data as a PNG file
+        link.click();  // Trigger download
+    });
 
     // Initial draw
     drawMandelbrot();
