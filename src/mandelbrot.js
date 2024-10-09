@@ -265,6 +265,11 @@ colorSchemeDropdown.addEventListener('change', (event) => {
     drawMandelbrot();
 });
 
+// Listen for custom color input changes to update the color scheme automatically
+startColorInput.addEventListener('input', drawMandelbrot);
+middleColorInput.addEventListener('input', drawMandelbrot);
+endColorInput.addEventListener('input', drawMandelbrot);
+
 // Randomization Listeners
 randomizeAllButton.addEventListener('click', randomizeAllColors);
 randomizeStartButton.addEventListener('click', randomizeStartColor);
