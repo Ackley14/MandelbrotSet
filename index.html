@@ -90,6 +90,51 @@
             display: none;
         }
 
+        /* Add space between Reset button and Random controls */
+        #resetButton {
+            margin-bottom: 20px;
+        }
+
+        /* Save Button Positioned just below the canvas */
+        .save-button-container {
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        .save-button-container input {
+            font-size: 12px;
+            padding: 5px 10px;
+        }
+
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        /* Custom resolution fields */
+        .custom-res-container {
+            display: none;
+        }
+
+        /* Progress bar */
+        .progress-container {
+            width: 100%;
+            background-color: #444;
+            border-radius: 5px;
+            height: 20px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .progress-bar {
+            background-color: #00ff00;
+            height: 100%;
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.4s ease;
+        }
+
     </style>
 </head>
 <body>
@@ -122,8 +167,32 @@
             </div>
         </div>
 
-        <!-- Mandelbrot Canvas -->
-        <canvas id="mandelbrotCanvas" width="800" height="600"></canvas>
+        <!-- Canvas Container to Hold the Canvas and Button -->
+        <div class="canvas-container">
+            <!-- Mandelbrot Canvas -->
+            <canvas id="mandelbrotCanvas" width="800" height="600"></canvas>
+
+            <!-- Save Button Positioned Below the Canvas -->
+            <div class="save-button-container">
+                <input type="button" id="saveButton" value="Save as PNG">
+                <input type="button" id="saveHighResButton" value="Save High Res PNG">
+                <select id="resolutionSelect">
+                    <option value="720p">720p</option>
+                    <option value="1080p">1080p</option>
+                    <option value="2k">2K</option>
+                    <option value="4k">4K</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <div class="custom-res-container" id="customResContainer">
+                    <input type="number" id="customWidth" placeholder="Width" min="1">
+                    <input type="number" id="customHeight" placeholder="Height" min="1">
+                </div>
+            </div>
+            <!-- Progress Bar -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
 
         <!-- Right Controls -->
         <div class="controls-container">
@@ -133,14 +202,11 @@
                 <div>
                     <label for="colorScheme">Scheme:</label><br>
                     <select id="colorScheme">
-                       <option value="vibrant">Vibrant (Purple & Blue)</option>
+                        <option value="fire">Fire</option>
                         <option value="grayscale">Grayscale</option>
-                        <option value="festive">Festive (Red & Green)</option>
-                         <option value="fire">Fire</option>
-                         <option value="cool">Cool</option>
-                            <option value="custom">Custom</option>
+                        <option value="cool">Cool</option>
+                        <option value="custom">Custom</option>
                     </select>
-
                 </div>
             </div>
 
@@ -173,5 +239,6 @@
     </div>
 
     <script src="src/mandelbrot.js"></script>
+    <script src="src/highresrender.js"></script> <!-- Add highresrender.js -->
 </body>
 </html>
