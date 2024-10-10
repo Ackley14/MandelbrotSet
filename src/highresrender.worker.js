@@ -5,7 +5,6 @@ self.onmessage = function(e) {
     const canvas = new OffscreenCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
-    
     let totalPixels = width * height;
     let renderedPixels = 0;
     let chunkSize = 1350;
@@ -80,7 +79,6 @@ self.onmessage = function(e) {
     }
 
     function renderChunk() {
-console.log('text');
         for (let i = 0; i < chunkSize; i++) {
             if (renderedPixels >= totalPixels) {
                 canvas.convertToBlob().then(blob => {
