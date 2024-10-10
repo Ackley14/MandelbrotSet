@@ -4,10 +4,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveButton = document.getElementById('saveButton');
     const saveHighResButton = document.getElementById('saveHighResButton');
     const resolutionSelect = document.getElementById('resolutionSelect');
+    const customResContainer = document.getElementById('customResContainer');
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
-    
-    let worker = new Worker('src/highresrender.worker.js');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const cancelButtonContainer = document.getElementById('cancelButtonContainer');
+    const cancelRenderButton = document.getElementById('cancelRenderButton');
+    const timeIndicator = document.getElementById('timeIndicator');
+
+    let worker = null;
+    let startTime = 0;
+    let timerInterval = null;
 
     let zoom = 0.5;  // Default zoom to 0.5
     let offsetX = 0;
@@ -47,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const zoomOut100x = document.getElementById('zoomOut100x');
     const zoomOut1000x = document.getElementById('zoomOut1000x');
 
-    // Store the current settings in the global object to be passed to highresrender.js
+    // Store the current settings in the global object to be passed to highresrender.worker.js
     window.mandelbrotSettings = {
         zoom,
         offsetX,
@@ -68,6 +75,126 @@ document.addEventListener('DOMContentLoaded', function() {
             customColors
         };
     }
+
+    // Function to initialize a new worker
+    function initializeWorker() {
+        if (worker) {
+            worker.terminate(); // Ensure any previous worker is terminated before creating a new one
+        }
+        worker = new Worker('src/highresrender.worker.js');
+        setupWorkerListeners();
+    }
+
+    // Function to setup Web Worker message handling
+    function setupWorkerListeners() {
+        worker.onmessage = function(e) {
+            if (e.data.type === 'progress') {
+                const progress = e.data.progress;
+                progressBar.style.width = `${progress}%`;
+                progressPercentage.textContent = `${Math.round(progress)}%`;
+
+                // Update estimated time remaining
+                const elapsedTime = (Date.now() - startTime) / 1000; // In seconds
+                const estimatedTotalTime = (elapsedTime / progress) * 100; // Estimate total time based on progress
+                const remainingTime = estimatedTotalTime - elapsedTime;
+
+                timeIndicator.textContent = `Elapsed: ${formatTime(elapsedTime)}, Remaining: ${formatTime(remainingTime)}`;
+
+            } else if (e.data.type === 'complete') {
+                const blob = e.data.blob;
+                const link = document.createElement('a');
+                link.download = `mandelbrot_highres.png`;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+
+                // Reset timer, progress bar, and hide elements
+                resetRenderState();
+            }
+        };
+    }
+
+    // Helper function to format time in minutes and seconds
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}m ${remainingSeconds}s`;
+    }
+
+    // Function to reset progress and timer after render completes/cancels
+    function resetRenderState() {
+        clearInterval(timerInterval);
+        progressBar.style.width = "0%";
+        progressPercentage.textContent = '0%';
+        progressContainer.style.display = "none";
+        cancelButtonContainer.style.display = "none";
+        timeIndicator.textContent = 'Elapsed: 0m 0s, Remaining: --';
+    }
+
+    // Function to start the high-resolution render
+    function startHighResRender() {
+        initializeWorker();  // Create a new worker for each render
+
+        const resOption = resolutionSelect.value;
+        let width, height;
+
+        switch (resOption) {
+            case '720':
+                width = 960;
+                height = 720;
+                break;
+            case '1080':
+                width = 1440;
+                height = 1080;
+                break;
+            case '2k':
+                width = 2048;
+                height = 1536;
+                break;
+            case '4k':
+                width = 4096;
+                height = 3072;
+                break;
+            case 'custom':
+                width = parseInt(document.getElementById('customWidth').value);
+                height = parseInt(document.getElementById('customHeight').value);
+                break;
+        }
+
+        const settings = window.mandelbrotSettings;
+        settings.width = width;
+        settings.height = height;
+
+        // Show progress bar and cancel button
+        progressContainer.style.display = "block";
+        progressBar.style.width = "0%";
+        progressPercentage.textContent = '0%';
+        cancelButtonContainer.style.display = "flex";
+
+        // Start timing
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            timeIndicator.textContent = `Elapsed: ${formatTime(elapsedTime)}, Remaining: --`;
+        }, 1000); // Update elapsed time every second
+
+        worker.postMessage(settings);  // Send settings to the Web Worker for processing
+    }
+
+    // Event listener for the cancel button
+    cancelRenderButton.addEventListener('click', function() {
+        if (worker) {
+            worker.terminate();  // Terminate the worker
+            worker = null;
+
+            // Reset progress and hide progress bar and cancel button
+            resetRenderState();
+        }
+    });
+
+    // Save High-Res PNG button event listener
+    saveHighResButton.addEventListener('click', function() {
+        startHighResRender();  // Start the high-res render when the button is clicked
+    });
 
     // Helper function to map canvas coordinates to complex plane
     function mapToComplexPlane(x, y, width, height, zoom, offsetX, offsetY) {
@@ -198,6 +325,15 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSettings();
         drawMandelbrot();
     }
+
+    // Event listener to toggle custom resolution fields based on selection
+    resolutionSelect.addEventListener('change', function() {
+        if (resolutionSelect.value === 'custom') {
+            customResContainer.style.display = 'flex'; // Show and align fields
+        } else {
+            customResContainer.style.display = 'none';
+        }
+    });
 
     // Function to render the Mandelbrot set with colorful gradients
     function drawMandelbrot() {
@@ -347,66 +483,9 @@ document.addEventListener('DOMContentLoaded', function() {
         link.click();  // Trigger download
     });
 
-    // Function to start the high-resolution render
-    function startHighResRender() {
-        const resOption = resolutionSelect.value;
-        let width, height;
-
-        switch (resOption) {
-            case '720':
-                width = 960;
-                height = 720;
-                break;
-            case '1080':
-                width = 1440;
-                height = 1080;
-                break;
-            case '2k':
-                width = 2048;
-                height = 1536;
-                break;
-            case '4k':
-                width = 4096;
-                height = 3072;
-                break;
-            case 'custom':
-                width = parseInt(document.getElementById('customWidth').value);
-                height = parseInt(document.getElementById('customHeight').value);
-                break;
-        }
-
-        const settings = window.mandelbrotSettings;
-        settings.width = width;
-        settings.height = height;
-
-        // Show progress bar
-        progressContainer.style.display = "block";
-        progressBar.style.width = "0%";
-
-        worker.postMessage(settings);  // Send settings to the Web Worker for processing
-    }
-
-    // Web Worker message handler
-    worker.onmessage = function(e) {
-        if (e.data.type === 'progress') {
-            progressBar.style.width = `${e.data.progress}%`;
-        } else if (e.data.type === 'complete') {
-            // Create a link to download the image as a PNG
-            const blob = e.data.blob;
-            const link = document.createElement('a');
-            link.download = `mandelbrot_highres.png`;
-            link.href = URL.createObjectURL(blob);
-            link.click();
-
-            // Hide progress bar
-            progressContainer.style.display = "none";
-        }
-    };
-
-    // Save High-Res PNG button event listener
-    saveHighResButton.addEventListener('click', function() {
-        startHighResRender();  // Start the high-res render when the button is clicked
-    });
+    // Ensure cancel button and time indicator are hidden on page load
+    cancelButtonContainer.style.display = "none";
+    timeIndicator.textContent = 'Elapsed: 0m 0s, Remaining: --';
 
     // Initial draw
     drawMandelbrot();
