@@ -1,27 +1,22 @@
 document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('mandelbrotCanvas');
     const ctx = canvas.getContext('2d');
-    const saveButton = document.getElementById('saveButton');
-    const saveHighResButton = document.getElementById('saveHighResButton');
-    const resolutionSelect = document.getElementById('resolutionSelect');
-    const customResContainer = document.getElementById('customResContainer');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBar = document.getElementById('progressBar');
-    const progressPercentage = document.getElementById('progressPercentage');
-    const cancelButtonContainer = document.getElementById('cancelButtonContainer');
-    const cancelRenderButton = document.getElementById('cancelRenderButton');
-    const timeIndicator = document.getElementById('timeIndicator');
+    const setSelect = document.getElementById('setSelect'); // Mandelbrot/Julia dropdown
+    const realSlider = document.getElementById('realSlider');
+    const imagSlider = document.getElementById('imagSlider');
+    const realValue = document.getElementById('realValue');
+    const imagValue = document.getElementById('imagValue');
+    const resetJuliaButton = document.getElementById('resetJuliaButton');
+    const juliaControls = document.getElementById('juliaControls');
 
-    let worker = null;
-    let startTime = 0;
-    let timerInterval = null;
-
-    let zoom = 0.5;  // Default zoom to 0.5
+    let setType = 'mandelbrot';  // Default set type to Mandelbrot
+    let juliaConstant = { real: -0.7, imag: 0.27015 };  // Default Julia constant
+    let zoom = 0.5;
     let offsetX = 0;
     let offsetY = 0;
     let maxIterations = 100;
-    let colorScheme = 'fire';  // Default color scheme to Fire
-    let customColors = { start: '#000000', middle: '#ff0000', end: '#ffffff' };  // Custom colors
+    let colorScheme = 'fire';
+    let customColors = { start: '#000000', middle: '#ff0000', end: '#ffffff' };
 
     const zoomSlider = document.getElementById('zoomSlider');
     const iterationSlider = document.getElementById('iterationSlider');
@@ -43,16 +38,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const randomizeMiddleButton = document.getElementById('randomizeMiddle');
     const randomizeEndButton = document.getElementById('randomizeEnd');
 
-    // Zoom Step Buttons
-    const zoomIn1x = document.getElementById('zoomIn1x');
-    const zoomIn10x = document.getElementById('zoomIn10x');
-    const zoomIn100x = document.getElementById('zoomIn100x');
-    const zoomIn1000x = document.getElementById('zoomIn1000x');
+    const saveButton = document.getElementById('saveButton');
+    const saveHighResButton = document.getElementById('saveHighResButton');
+    const resolutionSelect = document.getElementById('resolutionSelect');
+    const customResContainer = document.getElementById('customResContainer');
 
-    const zoomOut1x = document.getElementById('zoomOut1x');
-    const zoomOut10x = document.getElementById('zoomOut10x');
-    const zoomOut100x = document.getElementById('zoomOut100x');
-    const zoomOut1000x = document.getElementById('zoomOut1000x');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const cancelButtonContainer = document.getElementById('cancelButtonContainer');
+    const cancelRenderButton = document.getElementById('cancelRenderButton');
+    const timeIndicator = document.getElementById('timeIndicator');
+
+    let worker = null;
+    let startTime = 0;
+    let timerInterval = null;
 
     // Store the current settings in the global object to be passed to highresrender.worker.js
     window.mandelbrotSettings = {
@@ -61,7 +61,9 @@ document.addEventListener('DOMContentLoaded', function() {
         offsetY,
         maxIterations,
         colorScheme,
-        customColors
+        customColors,
+        juliaConstant,
+        setType // <-- Pass the setType to the worker (mandelbrot or julia)
     };
 
     // Update settings on change
@@ -72,7 +74,9 @@ document.addEventListener('DOMContentLoaded', function() {
             offsetY,
             maxIterations,
             colorScheme,
-            customColors
+            customColors,
+            juliaConstant,
+            setType // <-- Ensure setType is updated
         };
     }
 
@@ -103,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (e.data.type === 'complete') {
                 const blob = e.data.blob;
                 const link = document.createElement('a');
-                link.download = `mandelbrot_highres.png`;
+                link.download = `fractal_highres.png`;
                 link.href = URL.createObjectURL(blob);
                 link.click();
 
@@ -180,21 +184,21 @@ document.addEventListener('DOMContentLoaded', function() {
         worker.postMessage(settings);  // Send settings to the Web Worker for processing
     }
 
-    // Event listener for the cancel button
-    cancelRenderButton.addEventListener('click', function() {
-        if (worker) {
-            worker.terminate();  // Terminate the worker
-            worker = null;
+    // Mandelbrot/Julia set type switcher
+    if (setSelect) {
+        setSelect.addEventListener('change', (event) => {
+            setType = event.target.value;
 
-            // Reset progress and hide progress bar and cancel button
-            resetRenderState();
-        }
-    });
-
-    // Save High-Res PNG button event listener
-    saveHighResButton.addEventListener('click', function() {
-        startHighResRender();  // Start the high-res render when the button is clicked
-    });
+            if (setType === 'mandelbrot') {
+                juliaControls.classList.add('hidden');
+                drawFractal(); // Mandelbrot set
+            } else if (setType === 'julia') {
+                juliaControls.classList.remove('hidden');
+                drawFractal(); // Julia set
+            }
+            updateSettings(); // Ensure worker knows the correct set
+        });
+    }
 
     // Helper function to map canvas coordinates to complex plane
     function mapToComplexPlane(x, y, width, height, zoom, offsetX, offsetY) {
@@ -203,13 +207,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return { real, imag };
     }
 
-    // Function to compute if a point is in the Mandelbrot set
-    function computeMandelbrot(c, maxIterations) {
-        let z = { real: 0, imag: 0 };
+    // Function to compute if a point is in the Mandelbrot or Julia set
+    function computeFractal(c, maxIterations, julia = false, juliaC = { real: -0.7, imag: 0.27015 }) {
+        let z = julia ? { real: c.real, imag: c.imag } : { real: 0, imag: 0 };  // Julia uses different initial conditions
         let n = 0;
         while (n < maxIterations) {
-            const realTemp = z.real * z.real - z.imag * z.imag + c.real;
-            z.imag = 2 * z.real * z.imag + c.imag;
+            const realTemp = z.real * z.real - z.imag * z.imag + (julia ? juliaC.real : c.real);
+            z.imag = 2 * z.real * z.imag + (julia ? juliaC.imag : c.imag);
             z.real = realTemp;
 
             if (z.real * z.real + z.imag * z.imag > 4) break;
@@ -301,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
             end: endColorInput.value
         };
         updateSettings();
-        drawMandelbrot();
+        drawFractal();
     }
 
     // Randomize individual colors
@@ -309,21 +313,21 @@ document.addEventListener('DOMContentLoaded', function() {
         startColorInput.value = generateRandomColor();
         customColors.start = startColorInput.value;
         updateSettings();
-        drawMandelbrot();
+        drawFractal();
     }
 
     function randomizeMiddleColor() {
         middleColorInput.value = generateRandomColor();
         customColors.middle = middleColorInput.value;
         updateSettings();
-        drawMandelbrot();
+        drawFractal();
     }
 
     function randomizeEndColor() {
         endColorInput.value = generateRandomColor();
         customColors.end = endColorInput.value;
         updateSettings();
-        drawMandelbrot();
+        drawFractal();
     }
 
     // Event listener to toggle custom resolution fields based on selection
@@ -335,8 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Function to render the Mandelbrot set with colorful gradients
-    function drawMandelbrot() {
+    // Function to render the Mandelbrot or Julia set
+    function drawFractal() {
         const width = canvas.width;
         const height = canvas.height;
 
@@ -346,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let x = 0; x < width; x++) {
             for (let y = 0; y < height; y++) {
                 const c = mapToComplexPlane(x, y, width, height, zoom, offsetX, offsetY);
-                const n = computeMandelbrot(c, maxIterations);
+                const n = computeFractal(c, maxIterations, setType === 'julia', juliaConstant);
 
                 const color = getColor(n, maxIterations);
                 const [r, g, b] = color.match(/\d+/g).map(Number); // Extract RGB values from HSL or RGB
@@ -362,20 +366,20 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.putImageData(imageData, 0, 0);
     }
 
-    // Update zoom value and redraw
+    // Update zoom value and redraw fractal
     zoomSlider.addEventListener('input', () => {
         zoom = parseFloat(zoomSlider.value);
         zoomValue.textContent = zoom.toFixed(1);
         updateSettings();
-        drawMandelbrot(); // Redraw Mandelbrot on zoom change
+        drawFractal(); // Redraw fractal on zoom change
     });
 
-    // Update iteration count and redraw
+    // Update iteration count and redraw fractal
     iterationSlider.addEventListener('input', () => {
         maxIterations = parseInt(iterationSlider.value, 10);
         iterationValue.textContent = maxIterations;
         updateSettings();
-        drawMandelbrot(); // Redraw Mandelbrot on iteration change
+        drawFractal(); // Redraw fractal on iteration change
     });
 
     // Reset view to default
@@ -392,7 +396,33 @@ document.addEventListener('DOMContentLoaded', function() {
         colorSchemeDropdown.value = 'fire';
         customColors = { start: '#000000', middle: '#ff0000', end: '#ffffff' }; // Reset custom colors
         updateSettings();
-        drawMandelbrot(); // Redraw Mandelbrot after reset
+        drawFractal(); // Redraw fractal after reset
+    });
+
+    // Reset Julia constant values
+    resetJuliaButton.addEventListener('click', () => {
+        juliaConstant = { real: -0.7, imag: 0.27015 };
+        realSlider.value = juliaConstant.real;
+        imagSlider.value = juliaConstant.imag;
+        realValue.textContent = juliaConstant.real;
+        imagValue.textContent = juliaConstant.imag;
+        updateSettings();
+        drawFractal(); // Redraw Julia set with reset constant
+    });
+
+    // Update Julia constant values and redraw fractal
+    realSlider.addEventListener('input', () => {
+        juliaConstant.real = parseFloat(realSlider.value);
+        realValue.textContent = juliaConstant.real;
+        updateSettings();
+        drawFractal(); // Redraw Julia set with new constant
+    });
+
+    imagSlider.addEventListener('input', () => {
+        juliaConstant.imag = parseFloat(imagSlider.value);
+        imagValue.textContent = juliaConstant.imag;
+        updateSettings();
+        drawFractal(); // Redraw Julia set with new constant
     });
 
     // Handle canvas click to pan to new location
@@ -409,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
         offsetY = clickedPoint.imag;
 
         updateSettings();
-        drawMandelbrot(); // Redraw Mandelbrot after panning
+        drawFractal(); // Redraw fractal after panning
     });
 
     // Zoom Step Controls
@@ -418,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomSlider.value = zoom;
         zoomValue.textContent = zoom.toFixed(1);
         updateSettings();
-        drawMandelbrot();
+        drawFractal();
     }
 
     // Zoom In Step Controls
@@ -426,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
     zoomIn10x.addEventListener('click', () => updateZoom(10));
     zoomIn100x.addEventListener('click', () => updateZoom(100));
     zoomIn1000x.addEventListener('click', () => updateZoom(1000));
-
+     
     // Zoom Out Step Controls
     zoomOut1x.addEventListener('click', () => updateZoom(-1));
     zoomOut10x.addEventListener('click', () => updateZoom(-10));
@@ -447,26 +477,26 @@ document.addEventListener('DOMContentLoaded', function() {
             randomControlsDiv.classList.add('hidden');
         }
 
-        drawMandelbrot(); // Redraw Mandelbrot on color scheme change
+        drawFractal(); // Redraw fractal on color scheme change
     });
 
     // Listen for custom color input changes to update the color scheme automatically
     startColorInput.addEventListener('input', () => {
         customColors.start = startColorInput.value;
         updateSettings();
-        drawMandelbrot();
+        drawFractal();
     });
 
     middleColorInput.addEventListener('input', () => {
         customColors.middle = middleColorInput.value;
         updateSettings();
-        drawMandelbrot();
+        drawFractal();
     });
 
     endColorInput.addEventListener('input', () => {
         customColors.end = endColorInput.value;
         updateSettings();
-        drawMandelbrot();
+        drawFractal();
     });
 
     // Randomization Listeners
@@ -478,15 +508,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Save the current canvas view as a PNG file
     saveButton.addEventListener('click', function() {
         const link = document.createElement('a');
-        link.download = 'mandelbrot_view.png';  // Set the default filename
+        link.download = 'fractal_view.png';  // Set the default filename
         link.href = canvas.toDataURL('image/png');  // Get the canvas data as a PNG file
         link.click();  // Trigger download
     });
+    saveHighResButton.addEventListener('click', function() {
+    startHighResRender();  // Start the high-res render when the button is clicked
+});
+
+cancelRenderButton.addEventListener('click', function() {
+    if (worker) {
+        worker.terminate();  // Terminate the worker
+        worker = null;
+
+        // Reset progress and hide progress bar and cancel button
+        resetRenderState();
+    }
+});
 
     // Ensure cancel button and time indicator are hidden on page load
     cancelButtonContainer.style.display = "none";
     timeIndicator.textContent = 'Elapsed: 0m 0s, Remaining: --';
 
     // Initial draw
-    drawMandelbrot();
+    drawFractal();
 });
