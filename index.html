@@ -50,7 +50,7 @@
 
         @media (max-height: 480px) {
     .container {
-        margin-top: 500px; 
+        margin-top: 700px; 
     }
         }
 
@@ -205,6 +205,15 @@
             font-size: 12px;
             color: white;
         }
+        .github-link {
+    color: #61dafb;  /* Light blue color for the link */
+    text-decoration: none;  /* Remove the underline */
+}
+
+.github-link:hover {
+    text-decoration: underline;  /* Add underline on hover */
+}
+
 
     </style>
 </head>
@@ -212,6 +221,7 @@
 <div class="page-header">
     <h1 class="page-title">Mandelbrot Set Viewer</h1>
     <p class="page-details">Explore and render high-resolution Mandelbrot fractals by zooming in, panning, and customizing the colors and resolution.</p>
+    <a href="https://github.com/Ackley14/MandelbrotSet" target="_blank" class="github-link">Click here to go to the GitHub page</a>.
 </div>
 
     <div class="container">
@@ -246,7 +256,7 @@
         <!-- Canvas Container to Hold the Canvas and Button -->
         <div class="canvas-container">
             <!-- Guidance Text -->
-            <div class="guidance-text">Click the image to pan</div>
+            <div class="guidance-text">Click the image to select a new center location</div>
 
             <!-- Mandelbrot Canvas -->
             <canvas id="mandelbrotCanvas" width="800" height="600"></canvas>
