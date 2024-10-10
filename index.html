@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mandelbrot Set Generator</title>
     <style>
+    
         body {
             display: flex;
             justify-content: center;
@@ -16,6 +17,27 @@
             margin: 0;
             padding: 0;
         }
+        .page-header {
+    position: absolute;   /* This ensures it's anchored in the top left */
+    top: 10px;            /* A small gap from the top of the page */
+    left: 10px;           /* A small gap from the left side of the page */
+    text-align: Center;     /* Ensures everything is aligned to the left */
+    z-index: 1000; 
+    width: 100%       /* Makes sure it stays on top of other elements */
+}
+
+.page-title {
+    font-size: 24px;      /* Set the font size for the title */
+    color: #ffffff;       /* Make the title color white to match the theme */
+    margin: 0;            /* Remove default margin */
+}
+
+.page-details {
+    font-size: 14px;      /* Set a smaller font size for the details */
+    color: #cccccc;       /* A slightly lighter shade for the paragraph */
+    margin: 5px 0 0 0;    /* Small gap between title and paragraph */
+}
+
 
         .container {
             display: flex;
@@ -23,6 +45,13 @@
             width: 80%;
             max-width: 1200px;
             align-items: center;
+            margin-top: 100px;
+        }
+
+        @media (max-height: 480px) {
+    .container {
+        margin-top: 500px; 
+    }
         }
 
         canvas {
@@ -115,6 +144,15 @@
             align-items: flex-start;
         }
 
+        /* Guidance Text */
+        .guidance-text {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #cccccc;
+            width:100%;
+        }
+
         /* Custom resolution fields */
         .custom-res-container {
             display: none;
@@ -171,6 +209,11 @@
     </style>
 </head>
 <body>
+<div class="page-header">
+    <h1 class="page-title">Mandelbrot Set Viewer</h1>
+    <p class="page-details">Explore and render high-resolution Mandelbrot fractals by zooming in, panning, and customizing the colors and resolution.</p>
+</div>
+
     <div class="container">
         <!-- Left Controls -->
         <div class="controls-container">
@@ -202,6 +245,9 @@
 
         <!-- Canvas Container to Hold the Canvas and Button -->
         <div class="canvas-container">
+            <!-- Guidance Text -->
+            <div class="guidance-text">Click the image to pan</div>
+
             <!-- Mandelbrot Canvas -->
             <canvas id="mandelbrotCanvas" width="800" height="600"></canvas>
 
@@ -210,10 +256,10 @@
                 <input type="button" id="saveButton" value="Save as PNG">
                 <input type="button" id="saveHighResButton" value="Save High Res PNG">
                 <select id="resolutionSelect">
-                    <option value="720">960 x 720</option>
-                    <option value="1080">1440 x 1080</option>
-                    <option value="2k">2048 x 1536</option>
                     <option value="4k">4096 x 3072</option>
+                    <option value="2k">2048 x 1536</option>
+                    <option value="1080">1440 x 1080</option>
+                    <option value="720">960 x 720</option>
                     <option value="custom">Custom</option>
                 </select>
                 <div class="custom-res-container" id="customResContainer">
