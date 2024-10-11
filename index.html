@@ -1,371 +1,470 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mandelbrot Set and Julia Set Generator</title>
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: 'Arial', sans-serif;
-            background-color: #282c34;
-            color: #ffffff;
-            margin: 0;
-            padding: 0;
-        }
+      body {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          font-family: 'Arial', sans-serif;
+          background-color: #282c34;
+          color: #ffffff;
+          margin: 0;
+          padding: 0;
+      }
 
-        .page-header {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            text-align: center;
-            z-index: 1000;
-            width: 100%;
-        }
+      .page-header {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          text-align: center;
+          z-index: 1000;
+          width: 100%;
+      }
 
-        .page-title {
-            font-size: 24px;
-            color: #ffffff;
-            margin: 0;
-        }
+      .page-title {
+          font-size: 24px;
+          color: #ffffff;
+          margin: 0;
+      }
 
-        .page-details {
-            font-size: 14px;
-            color: #cccccc;
-            margin: 5px 0 0 0;
-        }
+      .page-details {
+          font-size: 14px;
+          color: #cccccc;
+          margin: 5px 0 0 0;
+      }
 
-        .container {
-            display: flex;
-            justify-content: space-between;
-            width: 80%;
-            max-width: 1200px;
-            align-items: flex-start;
-            margin-top: 100px;
-        }
+      .container {
+          display: flex;
+          justify-content: space-between;
+          width: 80%;
+          max-width: 1200px;
+          align-items: flex-start;
+          margin-top: 100px;
+      }
 
-        @media (max-height: 480px) {
-            .container {
-                margin-top: 700px; 
-            }
-        }
+      @media (max-height: 480px) {
+          .container {
+              margin-top: 700px;
+          }
+      }
 
-        canvas {
-            border: 2px solid #ffffff;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-        }
+      canvas {
+          border: 2px solid #ffffff;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      }
 
-        .controls-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            width: 300px;
-            padding: 20px;
-            background-color: #333;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-        }
+      .controls-container {
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          width: 300px;
+          padding: 20px;
+          background-color: #333;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      }
 
-        .controls-section {
-            margin-bottom: 20px;
-        }
+      .controls-section {
+          margin-bottom: 20px;
+      }
 
-        label {
-            font-size: 14px;
-        }
+      label {
+          font-size: 14px;
+      }
 
-        input[type="range"], input[type="button"], button, select, input[type="color"] {
-            background-color: #444;
-            color: #fff;
-            border: none;
-            padding: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
+      input[type="range"], input[type="button"], button, select, input[type="color"] {
+          background-color: #444;
+          color: #fff;
+          border: none;
+          padding: 5px;
+          border-radius: 5px;
+          cursor: pointer;
+          margin-bottom: 10px;
+      }
 
-        input[type="range"] {
-            width: 100%;
-        }
+      input[type="range"] {
+          width: 100%;
+      }
 
-        input[type="button"]:hover, button:hover, select:hover, input[type="color"]:hover {
-            background-color: #666;
-        }
+      input[type="button"]:hover, button:hover, select:hover, input[type="color"]:hover {
+          background-color: #666;
+      }
 
-        .zoom-step-controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
+      .zoom-step-controls {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          margin-bottom: 20px;
+      }
 
-        .zoom-step-controls button {
-            flex: 1;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            padding: 10px;
-            text-align: center;
-            font-size: 14px;
-        }
+      .zoom-step-controls button {
+          flex: 1;
+          margin-right: 10px;
+          margin-bottom: 10px;
+          padding: 10px;
+          text-align: center;
+          font-size: 14px;
+      }
 
-        .zoom-step-controls button:last-child {
-            margin-right: 0;
-        }
+      .zoom-step-controls button:last-child {
+          margin-right: 0;
+      }
 
-        .section-title {
-            font-size: 16px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: bold;
-        }
+      .section-title {
+          font-size: 16px;
+          margin-bottom: 10px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          font-weight: bold;
+      }
 
-        .hidden {
-            display: none;
-        }
+      .hidden {
+          display: none;
+      }
 
-        .save-button-container {
-            display: flex;
-            align-items: center;
-            margin-top: 10px;
-            text-align: left;
-        }
+      .save-button-container {
+          display: flex;
+          align-items: center;
+          margin-top: 10px;
+          text-align: left;
+      }
 
-        .save-button-container input {
-            font-size: 12px;
-            padding: 5px 10px;
-            margin-right: 10px;
-        }
+      .save-button-container input {
+          font-size: 12px;
+          padding: 5px 10px;
+          margin-right: 10px;
+      }
 
-        .canvas-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            position: relative;
-        }
+      .canvas-container {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          position: relative;
+      }
 
-        .guidance-text {
-            text-align: center;
-            font-size: 14px;
-            margin-bottom: 10px;
-            color: #cccccc;
-            width:100%;
-        }
+      .guidance-text {
+          text-align: center;
+          font-size: 14px;
+          margin-bottom: 10px;
+          color: #cccccc;
+          width:100%;
+      }
 
-        .custom-res-container {
-            display: none;
-            margin-left: 10px;
-        }
+      .custom-res-container {
+          display: none;
+          margin-left: 10px;
+      }
 
-        .progress-container {
-            width: 100%;
-            background-color: #444;
-            border-radius: 5px;
-            height: 20px;
-            margin-top: 10px;
-            display: none;
-            position: relative;
-        }
+      .progress-container {
+          width: 100%;
+          background-color: #444;
+          border-radius: 5px;
+          height: 20px;
+          margin-top: 10px;
+          display: none;
+          position: relative;
+      }
 
-        .progress-bar {
-            background-color: #607D8B;
-            height: 100%;
-            width: 0%;
-            border-radius: 5px;
-            transition: width 0.4s ease;
-            position: relative;
-        }
+      .progress-bar {
+          background-color: #607D8B;
+          height: 100%;
+          width: 0%;
+          border-radius: 5px;
+          transition: width 0.4s ease;
+          position: relative;
+      }
 
-        .progress-percentage {
-            position: absolute;
-            color: white;
-            font-size: 12px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
+      .progress-percentage {
+          position: absolute;
+          color: white;
+          font-size: 12px;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+      }
 
-        .cancel-button-container {
-            display: none;
-            margin-top: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
+      .cancel-button-container {
+          display: none;
+          margin-top: 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+      }
 
-        .time-indicator {
-            margin-left: 10px;
-            font-size: 12px;
-            color: white;
-        }
+      .time-indicator {
+          margin-left: 10px;
+          font-size: 12px;
+          color: white;
+      }
 
-        .github-link {
-            color: #61dafb;
-            text-decoration: none;
-        }
+      .github-link {
+          color: #61dafb;
+          text-decoration: none;
+      }
 
-        .github-link:hover {
-            text-decoration: underline;
-        }
+      .github-link:hover {
+          text-decoration: underline;
+      }
 
-        /* Dropdown for Mandelbrot/Julia Set positioned above top-left of canvas */
-        .set-select-container {
-            position: absolute;
-            top: -30px;
-            left: 0;
-            z-index: 1000;
-        }
+      /* Dropdown for Mandelbrot/Julia Set positioned above top-left of canvas */
+      .set-select-container {
+          position: absolute;
+          top: -30px;
+          left: 0;
+          z-index: 1000;
+      }
+
+      /* New Slow Zoom Controls Positioned Above the Canvas, Top-Right */
+      .slow-zoom-controls {
+          position: absolute;
+          top: -40px;
+          right: 0;
+          display: flex;
+          gap: 10px;
+      }
+
+      .slow-zoom-controls button {
+          padding: 5px;
+          font-size: 14px;
+          background-color: #444;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+      }
+
+      .slow-zoom-controls button:hover {
+          background-color: #666;
+      }
+
     </style>
-</head>
-<body>
-<div class="page-header">
-    <h1 class="page-title">Mandelbrot Set and Julia Set Viewer</h1>
-    <p class="page-details">Explore and render high-resolution Mandelbrot and Julia fractals by zooming in, panning, and customizing the colors and resolution. 
-        <a href="https://github.com/Ackley14/MandelbrotSet" target="_blank" class="github-link">Click here to go to the GitHub page</a>.
-    </p>
-</div>
+  </head>
+  <body>
+    <div class="page-header">
+      <h1 class="page-title">Mandelbrot Set and Julia Set Viewer</h1>
+      <p class="page-details">
+        Explore and render high-resolution Mandelbrot and Julia fractals by
+        zooming in, panning, and customizing the colors and resolution.
+        <a
+          href="https://github.com/Ackley14/MandelbrotSet"
+          target="_blank"
+          class="github-link"
+          >Click here to go to the GitHub page</a
+        >.
+      </p>
+    </div>
 
-<div class="container">
-    <!-- Left Controls -->
-    <div class="controls-container">
+    <div class="container">
+      <!-- Left Controls -->
+      <div class="controls-container">
         <!-- Zoom and Iteration Section -->
         <div class="controls-section">
-            <div class="section-title">Zoom & Iteration</div>
-            <div>
-                <label for="zoomSlider">Zoom: <span id="zoomValue">0.5</span>x</label><br>
-                <input type="range" id="zoomSlider" min="0.5" max="10000" step="0.1" value="0.5">
-            </div>
-            <div>
-                <label for="iterationSlider">Iterations: <span id="iterationValue">100</span></label><br>
-                <input type="range" id="iterationSlider" min="50" max="1000" step="10" value="100">
-            </div>
+          <div class="section-title">Zoom & Iteration</div>
+          <div>
+            <label for="zoomSlider"
+              >Zoom: <span id="zoomValue">0.5</span>x</label
+            ><br />
+            <input
+              type="range"
+              id="zoomSlider"
+              min="0.5"
+              max="10000"
+              step="0.1"
+              value="0.5"
+            />
+          </div>
+          <div>
+            <label for="iterationSlider"
+              >Iterations: <span id="iterationValue">100</span></label
+            ><br />
+            <input
+              type="range"
+              id="iterationSlider"
+              min="50"
+              max="1000"
+              step="10"
+              value="100"
+            />
+          </div>
         </div>
 
         <!-- Julia Set Controls (Initially Hidden) -->
         <div class="controls-section hidden" id="juliaControls">
-            <div class="section-title">Julia Set Parameters</div>
-            <div>
-                <label for="realSlider">Real Part (a): <span id="realValue">-0.7</span></label><br>
-                <input type="range" id="realSlider" min="-2" max="2" step="0.01" value="-0.7">
-            </div>
-            <div>
-                <label for="imagSlider">Imaginary Part (b): <span id="imagValue">0.27015</span></label><br>
-                <input type="range" id="imagSlider" min="-2" max="2" step="0.01" value="0.27015">
-            </div>
-            <input type="button" id="resetJuliaButton" value="Reset Julia Constant">
+          <div class="section-title">Julia Set Parameters</div>
+          <div>
+            <label for="realSlider"
+              >Real Part (a): <span id="realValue">-0.7</span></label
+            ><br />
+            <input
+              type="range"
+              id="realSlider"
+              min="-2"
+              max="2"
+              step="0.01"
+              value="-0.7"
+            />
+          </div>
+          <div>
+            <label for="imagSlider"
+              >Imaginary Part (b): <span id="imagValue">0.27015</span></label
+            ><br />
+            <input
+              type="range"
+              id="imagSlider"
+              min="-2"
+              max="2"
+              step="0.01"
+              value="0.27015"
+            />
+          </div>
+          <input
+            type="button"
+            id="resetJuliaButton"
+            value="Reset Julia Constant"
+          />
         </div>
 
         <!-- Zoom Step Controls in two rows -->
+        <div>Zoom In</div>
         <div class="zoom-step-controls">
-            <button id="zoomIn1x">1x</button>
-            <button id="zoomIn10x">10x</button>
-            <button id="zoomIn100x">100x</button>
-            <button id="zoomIn1000x">1000x</button>
+          <button id="zoomIn1x">1x</button>
+          <button id="zoomIn10x">10x</button>
+          <button id="zoomIn100x">100x</button>
+          <button id="zoomIn1000x">1000x</button>
         </div>
+        <div>Zoom Out</div>
         <div class="zoom-step-controls">
-            <button id="zoomOut1x">1x</button>
-            <button id="zoomOut10x">10x</button>
-            <button id="zoomOut100x">100x</button>
-            <button id="zoomOut1000x">1000x</button>
+          <button id="zoomOut1x">1x</button>
+          <button id="zoomOut10x">10x</button>
+          <button id="zoomOut100x">100x</button>
+          <button id="zoomOut1000x">1000x</button>
         </div>
-    </div>
+      </div>
 
-    <!-- Canvas Container to Hold the Canvas and Button -->
-    <div class="canvas-container">
+      <!-- Canvas Container to Hold the Canvas and Button -->
+      <div class="canvas-container">
         <!-- Dropdown to choose between Mandelbrot and Julia Set -->
         <div class="set-select-container">
-            <label for="setSelect">Choose Fractal Set:</label>
-            <select id="setSelect">
-                <option value="mandelbrot">Mandelbrot Set</option>
-                <option value="julia">Julia Set</option>
-            </select>
+          <label for="setSelect">Choose Fractal Set:</label>
+          <select id="setSelect">
+            <option value="mandelbrot">Mandelbrot Set</option>
+            <option value="julia">Julia Set</option>
+          </select>
         </div>
 
         <!-- Guidance Text -->
-        <div class="guidance-text">Click the image to select a new center location</div>
+        <div class="guidance-text">
+          Click the image to select a new center location
+        </div>
 
         <!-- Mandelbrot Canvas -->
         <canvas id="mandelbrotCanvas" width="800" height="600"></canvas>
 
+        <!-- New Slow Zoom Controls -->
+        <div class="slow-zoom-controls">
+          <button id="playPauseZoom">Play</button>
+          <button id="speedDownZoom">Speed -</button>
+          <button id="speedUpZoom">Speed +</button>
+        </div>
+
         <!-- Save Button Positioned Below the Canvas -->
         <div class="save-button-container">
-            <input type="button" id="saveButton" value="Save as PNG">
-            <input type="button" id="saveHighResButton" value="Save High Res PNG">
-            <select id="resolutionSelect">
-                <option value="4k">4096 x 3072</option>
-                <option value="2k">2048 x 1536</option>
-                <option value="1080">1440 x 1080</option>
-                <option value="720">960 x 720</option>
-                <option value="custom">Custom</option>
-            </select>
-            <div class="custom-res-container" id="customResContainer">
-                <input type="number" id="customWidth" placeholder="Width" min="1">
-                <input type="number" id="customHeight" placeholder="Height" min="1">
-            </div>
+          <input type="button" id="saveButton" value="Save as PNG" />
+          <input
+            type="button"
+            id="saveHighResButton"
+            value="Save High Res PNG"
+          />
+          <select id="resolutionSelect">
+            <option value="4k">4096 x 3072</option>
+            <option value="2k">2048 x 1536</option>
+            <option value="1080">1440 x 1080</option>
+            <option value="720">960 x 720</option>
+            <option value="custom">Custom</option>
+          </select>
+          <div class="custom-res-container" id="customResContainer">
+            <input type="number" id="customWidth" placeholder="Width" min="1" />
+            <input
+              type="number"
+              id="customHeight"
+              placeholder="Height"
+              min="1"
+            />
+          </div>
         </div>
 
         <!-- Progress Bar -->
         <div class="progress-container" id="progressContainer">
-            <div class="progress-bar" id="progressBar">
-                <div class="progress-percentage" id="progressPercentage">0%</div>
-            </div>
+          <div class="progress-bar" id="progressBar">
+            <div class="progress-percentage" id="progressPercentage">0%</div>
+          </div>
         </div>
 
         <!-- Cancel Button and Time Indicator -->
         <div class="cancel-button-container" id="cancelButtonContainer">
-            <button id="cancelRenderButton">Cancel Render</button>
-            <div class="time-indicator" id="timeIndicator">Elapsed: 0m 0s, Remaining: --</div>
+          <button id="cancelRenderButton">Cancel Render</button>
+          <div class="time-indicator" id="timeIndicator">
+            Elapsed: 0m 0s, Remaining: --
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- Right Controls -->
-    <div class="controls-container">
+      <!-- Right Controls -->
+      <div class="controls-container">
         <!-- Color Selection Section -->
         <div class="controls-section">
-            <div class="section-title">Color Scheme</div>
-            <div>
-                <label for="colorScheme">Scheme:</label><br>
-                <select id="colorScheme">
-                    <option value="fire">Fire</option>
-                    <option value="grayscale">Grayscale</option>
-                    <option value="cool">Cool</option>
-                    <option value="custom">Custom</option>
-                </select>
-            </div>
+          <div class="section-title">Color Scheme</div>
+          <div>
+            <label for="colorScheme">Scheme:</label><br />
+            <select id="colorScheme">
+              <option value="fire">Fire</option>
+              <option value="grayscale">Grayscale</option>
+              <option value="cool">Cool</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
         </div>
 
         <!-- Reset & Random -->
         <div class="controls-section">
-            <div class="section-title">Reset & Random</div>
-            <input type="button" id="resetButton" value="Reset View">
-            <div class="random-controls hidden" id="randomControls">
-                <button id="randomizeAll">Randomize All Colors</button>
-                <button id="randomizeStart">Randomize Start Color</button>
-                <button id="randomizeMiddle">Randomize Middle Color</button>
-                <button id="randomizeEnd">Randomize End Color</button>
-            </div>
+          <div class="section-title">Reset & Random</div>
+          <input type="button" id="resetButton" value="Reset View" />
+          <div class="random-controls hidden" id="randomControls">
+            <button id="randomizeAll">Randomize All Colors</button>
+            <button id="randomizeStart">Randomize Start Color</button>
+            <button id="randomizeMiddle">Randomize Middle Color</button>
+            <button id="randomizeEnd">Randomize End Color</button>
+          </div>
         </div>
 
         <!-- Custom Gradient Color Selectors -->
         <div class="controls-section hidden" id="customColors">
-            <div class="section-title">Custom Gradient</div>
-            <div>
-                <label>Start: <input type="color" id="startColor" value="#000000"></label>
-            </div>
-            <div>
-                <label>Middle: <input type="color" id="middleColor" value="#ff0000"></label>
-            </div>
-            <div>
-                <label>End: <input type="color" id="endColor" value="#ffffff"></label>
-            </div>
+          <div class="section-title">Custom Gradient</div>
+          <div>
+            <label
+              >Start: <input type="color" id="startColor" value="#000000"
+            /></label>
+          </div>
+          <div>
+            <label
+              >Middle: <input type="color" id="middleColor" value="#ff0000"
+            /></label>
+          </div>
+          <div>
+            <label
+              >End: <input type="color" id="endColor" value="#ffffff"
+            /></label>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
-<script src="src/mandelbrot.js"></script>
-</body>
+    <script src="src/mandelbrot.js"></script>
+  </body>
 </html>
