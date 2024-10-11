@@ -9,6 +9,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const resetJuliaButton = document.getElementById('resetJuliaButton');
     const juliaControls = document.getElementById('juliaControls');
 
+    const playPauseZoom = document.getElementById('playPauseZoom');
+    const speedUpZoom = document.getElementById('speedUpZoom');
+    const speedDownZoom = document.getElementById('speedDownZoom');
+
+    let zoomInterval = null;
+    let isZooming = false;
+    let zoomSpeed = 50;  // Default zoom speed, higher means slower zooming
+
     let setType = 'mandelbrot';  // Default set type to Mandelbrot
     let juliaConstant = { real: -0.7, imag: 0.27015 };  // Default Julia constant
     let zoom = 0.5;
@@ -200,6 +208,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Slow zoom function
+    function startSlowZoom() {
+        if (!isZooming) {
+            isZooming = true;
+            playPauseZoom.textContent = "Pause";
+            zoomInterval = setInterval(() => {
+                zoom *= 1 + 0.01 * (1 + zoomSpeed / 100);  // Slow zoom increments
+                zoomSlider.value = zoom;
+                zoomValue.textContent = zoom.toFixed(1);
+                updateSettings();
+                drawFractal();
+            }, zoomSpeed);
+        }
+    }
+
+    function stopSlowZoom() {
+        isZooming = false;
+        clearInterval(zoomInterval);
+        playPauseZoom.textContent = "Play";
+    }
+
+    // Play/Pause button for slow zoom
+    playPauseZoom.addEventListener('click', () => {
+        if (isZooming) {
+            stopSlowZoom();
+        } else {
+            startSlowZoom();
+        }
+    });
+
+    // Speed up button for slow zoom
+    speedUpZoom.addEventListener('click', () => {
+        if (zoomSpeed > 10) zoomSpeed -= 10;  // Speed up by decreasing interval
+    });
+
+    // Slow down button for slow zoom
+    speedDownZoom.addEventListener('click', () => {
+        zoomSpeed += 10;  // Slow down by increasing interval
+    });
+
     // Helper function to map canvas coordinates to complex plane
     function mapToComplexPlane(x, y, width, height, zoom, offsetX, offsetY) {
         const real = (x - width / 2) / (0.5 * zoom * width) + offsetX;
@@ -372,6 +420,9 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomValue.textContent = zoom.toFixed(1);
         updateSettings();
         drawFractal(); // Redraw fractal on zoom change
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     // Update iteration count and redraw fractal
@@ -380,6 +431,9 @@ document.addEventListener('DOMContentLoaded', function() {
         iterationValue.textContent = maxIterations;
         updateSettings();
         drawFractal(); // Redraw fractal on iteration change
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     // Reset view to default
@@ -397,6 +451,9 @@ document.addEventListener('DOMContentLoaded', function() {
         customColors = { start: '#000000', middle: '#ff0000', end: '#ffffff' }; // Reset custom colors
         updateSettings();
         drawFractal(); // Redraw fractal after reset
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     // Reset Julia constant values
@@ -408,6 +465,9 @@ document.addEventListener('DOMContentLoaded', function() {
         imagValue.textContent = juliaConstant.imag;
         updateSettings();
         drawFractal(); // Redraw Julia set with reset constant
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     // Update Julia constant values and redraw fractal
@@ -416,6 +476,9 @@ document.addEventListener('DOMContentLoaded', function() {
         realValue.textContent = juliaConstant.real;
         updateSettings();
         drawFractal(); // Redraw Julia set with new constant
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     imagSlider.addEventListener('input', () => {
@@ -423,6 +486,9 @@ document.addEventListener('DOMContentLoaded', function() {
         imagValue.textContent = juliaConstant.imag;
         updateSettings();
         drawFractal(); // Redraw Julia set with new constant
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     // Handle canvas click to pan to new location
@@ -440,6 +506,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateSettings();
         drawFractal(); // Redraw fractal after panning
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     // Zoom Step Controls
@@ -449,6 +518,9 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomValue.textContent = zoom.toFixed(1);
         updateSettings();
         drawFractal();
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     }
 
     // Zoom In Step Controls
@@ -478,6 +550,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         drawFractal(); // Redraw fractal on color scheme change
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     // Listen for custom color input changes to update the color scheme automatically
@@ -485,18 +560,27 @@ document.addEventListener('DOMContentLoaded', function() {
         customColors.start = startColorInput.value;
         updateSettings();
         drawFractal();
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     middleColorInput.addEventListener('input', () => {
         customColors.middle = middleColorInput.value;
         updateSettings();
         drawFractal();
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     endColorInput.addEventListener('input', () => {
         customColors.end = endColorInput.value;
         updateSettings();
         drawFractal();
+
+        // If user manually interacts, stop slow zoom
+        if (isZooming) stopSlowZoom();
     });
 
     // Randomization Listeners
